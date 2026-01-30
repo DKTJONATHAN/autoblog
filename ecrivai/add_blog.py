@@ -2,7 +2,6 @@ import os
 import argparse
 from datetime import datetime
 import requests
-import json
 
 topics = ['Kenyan politics','AFCON Kenya','Nairobi gossip','Kenyan business']
 
@@ -13,24 +12,23 @@ args = parser.parse_args()
 os.makedirs(args.out_dir, exist_ok=True)
 topic = topics[datetime.now().weekday() % 4]
 
-# ✅ Puter.js AI API (FREE GPT-4o/Claude)
-def puter_chat(prompt, model='gpt-4o-mini'):
+def puter_chat(prompt):
     url = "https://api.puter.com/v2/ai/chat"
     payload = {
         "messages": [{"role": "user", "content": prompt}],
-        "model": model,
+        "model": "gpt-4o-mini",
         "stream": False
     }
     response = requests.post(url, json=payload)
     data = response.json()
     return data['choices'][0]['message']['content']
 
-prompt = f"Write 1000 word UK English blog on '{topic}'. Varied sentences. Human style."
+prompt = "Write 1000 word UK English blog on '" + topic + "'. Varied sentences. Human style."
 body = puter_chat(prompt)
 
 path = os.path.join(args.out_dir, datetime.now().strftime('%Y%m%d') + '.md')
 with open(path, 'w') as f:
-    f.write(f"# {topic}
+    f.write("# " + topic + "
 
-{body}")
-print(f'✅ Puter.js created {path}')
+" + body)
+print('✅ Puter.js created ' + path)

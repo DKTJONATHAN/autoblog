@@ -1,4 +1,4 @@
-name: EcrivAI Auto Kenyan Posts
+name: EcrivAI Puter.js Posts
 on:
   schedule:
     - cron: '0 5,11,17 * * *'
@@ -12,11 +12,12 @@ jobs:
       with:
         python-version: '3.11'
     - name: Install deps
-      run: pip install langchain langchain-google-genai google-generativeai python-dotenv
+      run: pip install puter-python-sdk python-dotenv requests
     - name: Generate article
       run: python ecrivai/add_blog.py --out-dir temp-posts
       env:
-        GOOGLE_API_KEY: ${{ secrets.GOOGLE_API_KEY }}
+        PUTER_USERNAME: ${{ secrets.PUTER_USERNAME }}
+        PUTER_PASSWORD: ${{ secrets.PUTER_PASSWORD }}
     - name: Push to TheReport
       run: |
         git clone https://github.com/DKTJONATHAN/TheReport.git report
@@ -26,5 +27,5 @@ jobs:
         git config --local user.name "Auto Bot"
         git config --local user.email "bot@github.com"
         git add src/content/posts/*.md
-        git commit -m "🤖 Auto post: $(date +%Y-%m-%d)" || exit 0
+        git commit -m "🤖 Puter.js post: $(date +%Y-%m-%d)" || exit 0
         git push https://${{ secrets.REPORT_PAT }}@github.com/DKTJONATHAN/TheReport main

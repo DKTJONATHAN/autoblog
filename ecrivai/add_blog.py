@@ -22,7 +22,8 @@ def puter_chat(prompt, model='gpt-4o-mini'):
         "stream": False
     }
     response = requests.post(url, json=payload)
-    return response.json()['choices'][0]['message']['content']
+    data = response.json()
+    return data['choices'][0]['message']['content']
 
 prompt = f"Write 1000 word UK English blog on '{topic}'. Varied sentences. Human style."
 body = puter_chat(prompt)

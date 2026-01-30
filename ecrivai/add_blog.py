@@ -1,14 +1,14 @@
 import os
 import argparse
 from datetime import datetime
-from langchain_openai import ChatOpenAI
+from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain_core.prompts import PromptTemplate
 from langchain_core.output_parsers import StrOutputParser
 
-os.environ['OPENAI_API_KEY'] = os.getenv('OPENAI_API_KEY')
+os.environ['GOOGLE_API_KEY'] = os.getenv('GOOGLE_API_KEY')
 
 topics = ['Kenyan politics','AFCON Kenya','Nairobi gossip','Kenyan business']
-llm = ChatOpenAI(model='gpt-4o-mini', temperature=0.7)
+llm = ChatGoogleGenerativeAI(model='gemini-1.5-flash', temperature=0.7)
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--out-dir', default='./content')

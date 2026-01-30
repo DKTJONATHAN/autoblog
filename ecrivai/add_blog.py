@@ -23,12 +23,17 @@ def puter_chat(prompt):
     data = response.json()
     return data['choices'][0]['message']['content']
 
-prompt = "Write 1000 word UK English blog on '" + topic + "'. Varied sentences. Human style."
-body = puter_chat(prompt)
+prompt_text = "Write 1000 word UK English blog on '" + topic + "'. Varied sentences. Human style."
+body = puter_chat(prompt_text)
 
-path = os.path.join(args.out_dir, datetime.now().strftime('%Y%m%d') + '.md')
+filename = datetime.now().strftime('%Y%m%d') + '.md'
+path = os.path.join(args.out_dir, filename)
+
+header = "# " + topic + "
+
+"
+content = header + body
+
 with open(path, 'w') as f:
-    f.write("# " + topic + "
-
-" + body)
-print('✅ Puter.js created ' + path)
+    f.write(content)
+print("✅ Puter.js created " + path)

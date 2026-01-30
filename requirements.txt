@@ -1,8 +1,5 @@
-langchain
-langchain-community
-langchain-openai
+langchain==0.0.350  # Legacy for .chains
 langchain-google-genai
-langchain-core
-tiktoken
+google-generativeai
 python-dotenv
 gitpython

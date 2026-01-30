@@ -1,29 +1,24 @@
-name: Auto Kenyan Blog
+name: Auto Kenyan Blog EcrivAI
 on:
   schedule:
-    - cron: '0 5,11,17 * * *'  # 8AM,2PM,8PM EAT UTC+3
-  workflow_dispatch:
+    - cron: '0 5,11,17 * * *'  # 8AM,2PM,8PM EAT (UTC+3)
+  workflow_dispatch:  # Manual trigger
 jobs:
-  blog:
+  generate:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v4
     - uses: actions/setup-python@v5
       with:
         python-version: '3.11'
-    - name: Cache pip
-      uses: actions/cache@v4
-      with:
-        path: ~/.cache/pip
-        key: ${{ runner.os }}-pip-${{ hashFiles('requirements.txt') }}
     - name: Install deps
       run: pip install -r requirements.txt
-    - name: Run EcrivAI
-      run: cd ecrivai && python write.py
+    - name: Generate blog
+      run: python ecrivai/add_blog.py --out-dir src/content/blog
       env:
         OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
-    - name: Commit & push
+    - name: Git commit & push
       uses: stefanzweifel/git-auto-commit-action@v5
       with:
-        commit_message: "Auto: New Kenyan article [${{ github.run_id }}]"
+        commit_message: "🤖 Auto: New Kenyan article"
         file_pattern: src/content/blog/*

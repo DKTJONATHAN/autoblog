@@ -9,42 +9,38 @@ from langchain_core.output_parsers import StrOutputParser
 import re
 
 load_dotenv()
-logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
+logging.basicConfig(level=logging.INFO)
 
-topics_pool = ["latest Kenyan politics governance updates 2026", "AFCON African Cup Nations Kenya team news", "Nairobi celebrity gossip entertainment trends", "Kenyan business entrepreneurship startup tips"]
-
-topic_prompt = PromptTemplate.from_template("Suggest engaging blog title for Kenyan audience on: {topic_pool}. Output only title.")
-
-content_prompt = PromptTemplate.from_template("Write 1200-1600 word blog post titled '{title}'. UK English. Varied sentence lengths. Conversational professional tone. Structure: Engaging intro, 4-5 sections with subheads, conclusion CTA. Human-like: Contractions, rhetorical questions. Research-backed facts. No lists. SEO keywords natural. Output pure Markdown body no frontmatter.")
+topics = ["Kenyan politics 2026", "AFCON Kenya news", "Nairobi celebrity gossip", "Kenyan business tips"]
 
 llm = ChatOpenAI(model="gpt-4o-mini", temperature=0.7)
-topic_chain = topic_prompt | llm | StrOutputParser()
-content_chain = content_prompt | llm | StrOutputParser()
-
-def get_blog_chain():
-    topic_pool = topics_pool[datetime.now().weekday() % len(topics_pool)]
-    title = topic_chain.invoke({"topic_pool": topic_pool})
-    body = content_chain.invoke({"title": title})
-    return title.strip('"'), body
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("--out-dir", default="./content", type=str)
+    parser.add_argument("--out-dir", default="./content")
     args = parser.parse_args()
     os.makedirs(args.out_dir, exist_ok=True)
-    title, body = get_blog_chain()
-    slug = re.sub(r'[^a-z0-9]+', '-', title.lower().strip())
-    date_str = datetime.now().strftime('%Y-%m-%d')
-    frontmatter = "---
-title: "" + title + ""
-date: " + date_str + "
-slug: " + slug + "
-description: "Kenyan insights."
----"
-    md_content = frontmatter + "
+    
+    topic = topics[datetime.now().weekday() % len(topics)]
+    title_prompt = PromptTemplate.from_template("Blog title for: {topic}")
+    title = (title_prompt | llm | StrOutputParser()).invoke({"topic": topic}).strip('"')
+    
+    body_prompt = PromptTemplate.from_template("Write 1500 word blog: {title}. UK English, varied sentences, conversational, SEO, no lists.")
+    body = (body_prompt | llm | StrOutputParser()).invoke({"title": title})
+    
+    slug = re.sub(r'[^a-z0-9]+', '-', title.lower())
+    date = datetime.now().strftime('%Y-%m-%d')
+    
+    fm = '---
+title: "{}"
+date: {}
+slug: {}
+---
 
-" + body
-    out_path = os.path.join(args.out_dir, date_str + "-" + slug + ".md")
-    with open(out_path, 'w', encoding='utf-8') as f:
-        f.write(md_content)
-    logging.info("Wrote " + out_path)
+'.format(title, date, slug)
+    
+    path = os.path.join(args.out_dir, '{}-{}.md'.format(date, slug))
+    with open(path, 'w') as f:
+        f.write(fm + body)
+    
+    logging.info('Wrote ' + path)

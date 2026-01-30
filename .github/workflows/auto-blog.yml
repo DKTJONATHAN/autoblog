@@ -1,24 +1,30 @@
-name: Auto Kenyan Blog EcrivAI
+name: EcrivAI to TheReport
 on:
   schedule:
-    - cron: '0 5,11,17 * * *'  # 8AM,2PM,8PM EAT (UTC+3)
-  workflow_dispatch:  # Manual trigger
+    - cron: '0 5,11,17 * * *'  # 8AM,2PM,8PM EAT
+  workflow_dispatch:
 jobs:
-  generate:
+  publish:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v4  # Your current repo
     - uses: actions/setup-python@v5
       with:
         python-version: '3.11'
     - name: Install deps
-      run: pip install -r requirements.txt
-    - name: Generate blog
-      run: python ecrivai/add_blog.py --out-dir src/content/blog
+      run: pip install -r requirements.txt langchain-google-genai langchain-community langchain-core
+    - name: Generate article
+      run: python ecrivai/add_blog.py --out-dir temp-posts
       env:
         OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
-    - name: Git commit & push
-      uses: stefanzweifel/git-auto-commit-action@v5
-      with:
-        commit_message: "🤖 Auto: New Kenyan article"
-        file_pattern: src/content/blog/*
+    - name: Push to TheReport
+      run: |
+        git clone https://github.com/DKTJONATHAN/TheReport.git the-report
+        mkdir -p the-report/src/content/posts
+        cp temp-posts/*.md the-report/src/content/posts/
+        cd the-report
+        git config --local user.email "action@github.com"
+        git config --local user.name "Auto Blog Bot"
+        git add src/content/posts/*.md
+        git commit -m "🤖 Auto post: Kenyan news $(date +%Y-%m-%d)" || exit 0
+        git push https://${{ secrets.REPORT_PAT }}@github.com/DKTJONATHAN/TheReport main

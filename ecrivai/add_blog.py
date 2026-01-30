@@ -1,65 +1,69 @@
 import os
 import argparse
 import logging
+from datetime import datetime
 from dotenv import load_dotenv
-from langchain_google_genai import GoogleGenerativeAI
-from langchain.chains import LLMChain, SimpleSequentialChain
-from prompt_templates import content_prompt, topic_prompt
-from write import to_markdown, md2hugo
-
+from langchain_openai import ChatOpenAI
+from langchain_core.prompts import PromptTemplate
+from langchain_core.output_parsers import StrOutputParser
+import git
 
 load_dotenv()
-logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
+logging.basicConfig(level=logging.INFO)
+
+topics_pool = [
+    "latest Kenyan politics governance updates 2026",
+    "AFCON African Cup Nations Kenya team news",
+    "Nairobi celebrity gossip entertainment trends",
+    "Kenyan business entrepreneurship startup tips"
+]
+
+topic_prompt = PromptTemplate.from_template(
+    "Suggest engaging blog title for Kenyan audience on: {topic_pool}. Output only title."
+)
+
+content_prompt = PromptTemplate.from_template(
+    """Write 1200-1600 word blog post titled '{title}'.
+    UK English. Varied sentence lengths (mix short/long). Conversational professional tone.
+    Structure: Engaging intro, 4-5 sections with subheads, conclusion CTA.
+    Human-like: Contractions, rhetorical questions, anecdotes. Research-backed facts.
+    No lists if possible. SEO keywords natural.
+    Output pure Markdown body (no frontmatter)."""
+)
+
+llm = ChatOpenAI(model="gpt-4o-mini", temperature=0.7)
+
+topic_chain = topic_prompt | llm | StrOutputParser()
+content_chain = content_prompt | llm | StrOutputParser()
 
 def get_blog_chain():
-    logging.info("Loading LLM config")
-    # set up some parameters of the LLM
-    content_llm_kwargs = {
-        "temperature": 0.7,
-        "model": "gemini-pro",
-        "max_output_tokens": 2048 # ~ 1500 words (max for gemini-pro)
-    }
-
-    topic_llm_kwargs = {
-        "temperature": 0.9,
-        "model": "gemini-pro",
-        "max_output_tokens": 50 # ~ 38words
-    }
-
-    # create LLMs with kwargs specified above
-    content_llm = GoogleGenerativeAI(**content_llm_kwargs)
-    topic_llm = GoogleGenerativeAI(**topic_llm_kwargs)
-
-    # chain it all together
-    topic_chain = LLMChain(llm=topic_llm, prompt=topic_prompt)
-    content_chain = LLMChain(llm=content_llm, prompt=content_prompt)
-
-    chain = SimpleSequentialChain(
-        chains=[
-            topic_chain,
-            content_chain
-        ],
-        verbose=True
-    )
-
-    return chain
+    topic_pool = topics_pool[datetime.now().weekday() % len(topics_pool)]
+    title = topic_chain.invoke({"topic_pool": topic_pool})
+    body = content_chain.invoke({"title": title})
+    return title.strip('"'), body
 
 if __name__ == "__main__":
-    logging.info("Parsing CLI args")
-    parser = argparse.ArgumentParser(description="A create a blog post as a Markdown file with ecrivai")
-    parser.add_argument("--out-dir", type=str, default="./content", help="The path to the output directory")
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--out-dir", default="./content", type=str)
     args = parser.parse_args()
+
+    title, body = get_blog_chain()
+    slug = title.lower().replace(' ', '-').replace('[^a-z0-9-]', '')
+    date_str = datetime.now().strftime('%Y-%m-%d')
     
-    chain = get_blog_chain()
-    logging.info("Generating topic and blog (can take some time)...")
-    blog_text = chain.run("")
-    logging.info("Blog content finished")
+    frontmatter = f"""---
+title: "{title}"
+date: {date_str}
+slug: {slug}
+description: "Kenyan {slug} insights."
+---
+"""
+    
+    md_content = frontmatter + "
 
-    out_dir = args.out_dir
-    logging.info(f"Writing blog to Markdown file at: {out_dir}")
-    md_file_name = to_markdown(blog_text, out_dir=out_dir)
-    logging.info(f"Formatting file header for Hugo")
-    blof_file_path = os.path.join(out_dir, md_file_name)
-    md2hugo(blof_file_path, blof_file_path)
-    logging.info(f"Done")
-
+" + body
+    out_path = os.path.join(args.out_dir, f"{date_str}-{slug}.md")
+    with open(out_path, 'w') as f:
+        f.write(md_content)
+    
+    logging.info(f"Wrote {out_path}")

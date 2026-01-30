@@ -8,7 +8,7 @@ from langchain_core.output_parsers import StrOutputParser
 os.environ['GOOGLE_API_KEY'] = os.getenv('GOOGLE_API_KEY')
 
 topics = ['Kenyan politics','AFCON Kenya','Nairobi gossip','Kenyan business']
-llm = ChatGoogleGenerativeAI(model='gemini-3-flash', temperature=0.7)
+llm = ChatGoogleGenerativeAI(model='gemini-pro', temperature=0.7)
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--out-dir', default='./content')

@@ -12,7 +12,7 @@ jobs:
       with:
         python-version: '3.11'
     - name: Install deps
-      run: pip install langchain langchain-google-genai python-dotenv
+      run: pip install langchain langchain-google-genai google-generativeai python-dotenv
     - name: Generate article
       run: python ecrivai/add_blog.py --out-dir temp-posts
       env:

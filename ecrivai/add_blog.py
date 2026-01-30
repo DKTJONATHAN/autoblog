@@ -6,6 +6,7 @@ from dotenv import load_dotenv
 from langchain_openai import ChatOpenAI
 from langchain_core.prompts import PromptTemplate
 from langchain_core.output_parsers import StrOutputParser
+import re
 import git
 
 load_dotenv()
@@ -24,11 +25,11 @@ topic_prompt = PromptTemplate.from_template(
 
 content_prompt = PromptTemplate.from_template(
     """Write 1200-1600 word blog post titled '{title}'.
-    UK English. Varied sentence lengths (mix short/long). Conversational professional tone.
-    Structure: Engaging intro, 4-5 sections with subheads, conclusion CTA.
-    Human-like: Contractions, rhetorical questions, anecdotes. Research-backed facts.
-    No lists if possible. SEO keywords natural.
-    Output pure Markdown body (no frontmatter)."""
+UK English. Varied sentence lengths (mix short/long). Conversational professional tone.
+Structure: Engaging intro, 4-5 sections with subheads, conclusion CTA.
+Human-like: Contractions, rhetorical questions, anecdotes. Research-backed facts.
+No lists if possible. SEO keywords natural.
+Output pure Markdown body (no frontmatter)."""
 )
 
 llm = ChatOpenAI(model="gpt-4o-mini", temperature=0.7)
@@ -48,7 +49,7 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     title, body = get_blog_chain()
-    slug = title.lower().replace(' ', '-').replace('[^a-z0-9-]', '')
+    slug = re.sub(r'[^a-z0-9]+', '-', title.lower().strip())
     date_str = datetime.now().strftime('%Y-%m-%d')
     
     frontmatter = f"""---
@@ -56,9 +57,8 @@ title: "{title}"
 date: {date_str}
 slug: {slug}
 description: "Kenyan {slug} insights."
----
-"""
-    
+---"""
+
     md_content = frontmatter + "
 
 " + body

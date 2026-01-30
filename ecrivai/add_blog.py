@@ -1,46 +1,37 @@
 import os
 import argparse
-import logging
 from datetime import datetime
-from dotenv import load_dotenv
 from langchain_openai import ChatOpenAI
 from langchain_core.prompts import PromptTemplate
 from langchain_core.output_parsers import StrOutputParser
 import re
 
-load_dotenv()
-logging.basicConfig(level=logging.INFO)
+os.environ['OPENAI_API_KEY'] = os.getenv('OPENAI_API_KEY')
 
-topics = ["Kenyan politics 2026", "AFCON Kenya news", "Nairobi celebrity gossip", "Kenyan business tips"]
+topics = ['Kenyan politics 2026','AFCON Kenya','Nairobi gossip','Kenyan business']
+llm = ChatOpenAI(model='gpt-4o-mini', temperature=0.7)
 
-llm = ChatOpenAI(model="gpt-4o-mini", temperature=0.7)
+parser = argparse.ArgumentParser()
+parser.add_argument('--out-dir', default='./content')
+args = parser.parse_args()
 
-if __name__ == "__main__":
-    parser = argparse.ArgumentParser()
-    parser.add_argument("--out-dir", default="./content")
-    args = parser.parse_args()
-    os.makedirs(args.out_dir, exist_ok=True)
-    
-    topic = topics[datetime.now().weekday() % len(topics)]
-    title_prompt = PromptTemplate.from_template("Blog title for: {topic}")
-    title = (title_prompt | llm | StrOutputParser()).invoke({"topic": topic}).strip('"')
-    
-    body_prompt = PromptTemplate.from_template("Write 1500 word blog: {title}. UK English, varied sentences, conversational, SEO, no lists.")
-    body = (body_prompt | llm | StrOutputParser()).invoke({"title": title})
-    
-    slug = re.sub(r'[^a-z0-9]+', '-', title.lower())
-    date = datetime.now().strftime('%Y-%m-%d')
-    
-    fm = '---
-title: "{}"
-date: {}
-slug: {}
+topic = topics[datetime.now().weekday() % 4]
+title_prompt = PromptTemplate.from_template('Title for Kenyan blog: {t}')
+title = (title_prompt | llm | StrOutputParser()).invoke({'t': topic})
+body_prompt = PromptTemplate.from_template('Write 1200 word UK English blog titled {t}. Varied sentences, conversational.')
+body = (body_prompt | llm | StrOutputParser()).invoke({'t': title})
+
+slug = re.sub(r'[^a-z0-9]', '-', title.lower())
+date = datetime.now().strftime('%Y-%m-%d')
+fm = '---
+title: ' + title + '
+date: ' + date + '
+slug: ' + slug + '
 ---
 
-'.format(title, date, slug)
-    
-    path = os.path.join(args.out_dir, '{}-{}.md'.format(date, slug))
-    with open(path, 'w') as f:
-        f.write(fm + body)
-    
-    logging.info('Wrote ' + path)
+'
+path = os.path.join(args.out_dir, date + '-' + slug + '.md')
+os.makedirs(args.out_dir, exist_ok=True)
+with open(path, 'w') as f:
+ f.write(fm + body)
+print('Created ' + path)

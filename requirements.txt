@@ -1,6 +1,7 @@
-langchain
-langchain-openai
-langchain-google-genai
-openai
+langchain-community==0.3.1
+langchain-openai==0.2.1
+langchain-google-genai==0.1.0
+langchain-core==0.3.12
+tiktoken
 python-dotenv
 gitpython

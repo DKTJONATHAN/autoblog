@@ -12,11 +12,11 @@ jobs:
       with:
         python-version: '3.11'
     - name: Install deps
-      run: pip install langchain langchain-openai langchain-core python-dotenv
+      run: pip install langchain langchain-google-genai python-dotenv
     - name: Generate article
       run: python ecrivai/add_blog.py --out-dir temp-posts
       env:
-        OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+        GOOGLE_API_KEY: ${{ secrets.GOOGLE_API_KEY }}
     - name: Push to TheReport
       run: |
         git clone https://github.com/DKTJONATHAN/TheReport.git report
